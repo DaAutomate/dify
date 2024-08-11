@@ -57,7 +57,7 @@ class DifyConfig(
     def HTTP_REQUEST_NODE_READABLE_MAX_BINARY_SIZE(self) -> str:
         return f'{self.HTTP_REQUEST_NODE_MAX_BINARY_SIZE / 1024 / 1024:.2f}MB'
 
-    HTTP_REQUEST_NODE_MAX_TEXT_SIZE: int = 1024 * 1024
+    HTTP_REQUEST_NODE_MAX_TEXT_SIZE: int = 1024 * 1024 * 5
 
     @computed_field
     def HTTP_REQUEST_NODE_READABLE_MAX_TEXT_SIZE(self) -> str:
