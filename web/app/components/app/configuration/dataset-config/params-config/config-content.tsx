@@ -1,20 +1,12 @@
 'use client'
 
-import { memo, useMemo } from 'react'
+import { memo, useEffect, useMemo } from 'react'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  RiQuestionLine,
-} from '@remixicon/react'
 import WeightedScore from './weighted-score'
 import TopKItem from '@/app/components/base/param-item/top-k-item'
 import ScoreThresholdItem from '@/app/components/base/param-item/score-threshold-item'
-import RadioCard from '@/app/components/base/radio-card/simple'
 import { RETRIEVE_TYPE } from '@/types/app'
-import {
-  MultiPathRetrieval,
-  NTo1Retrieval,
-} from '@/app/components/base/icons/src/public/common'
 import type {
   DatasetConfigs,
 } from '@/models/debug'
@@ -22,17 +14,15 @@ import ModelSelector from '@/app/components/header/account-setting/model-provide
 import { useModelListAndDefaultModelAndCurrentProviderAndModel } from '@/app/components/header/account-setting/model-provider-page/hooks'
 import type { ModelConfig } from '@/app/components/workflow/types'
 import ModelParameterModal from '@/app/components/header/account-setting/model-provider-page/model-parameter-modal'
-import TooltipPlus from '@/app/components/base/tooltip-plus'
+import Tooltip from '@/app/components/base/tooltip'
 import { ModelTypeEnum } from '@/app/components/header/account-setting/model-provider-page/declarations'
 import type {
   DataSet,
-  WeightedScoreEnum,
 } from '@/models/datasets'
 import { RerankingModeEnum } from '@/models/datasets'
 import cn from '@/utils/classnames'
 import { useSelectedDatasetsMode } from '@/app/components/workflow/nodes/knowledge-retrieval/hooks'
 import Switch from '@/app/components/base/switch'
-import { useGetLanguage } from '@/context/i18n'
 
 type Props = {
   datasetConfigs: DatasetConfigs
@@ -44,11 +34,6 @@ type Props = {
   selectedDatasets?: DataSet[]
 }
 
-const LEGACY_LINK_MAP = {
-  en_US: 'https://docs.dify.ai/guides/knowledge-base/integrate-knowledge-within-application',
-  zh_Hans: 'https://docs.dify.ai/v/zh-hans/guides/knowledge-base/integrate_knowledge_within_application',
-} as Record<string, string>
-
 const ConfigContent: FC<Props> = ({
   datasetConfigs,
   onChange,
@@ -59,15 +44,18 @@ const ConfigContent: FC<Props> = ({
   selectedDatasets = [],
 }) => {
   const { t } = useTranslation()
-  const language = useGetLanguage()
   const selectedDatasetsMode = useSelectedDatasetsMode(selectedDatasets)
   const type = datasetConfigs.retrieval_model
-  const setType = (value: RETRIEVE_TYPE) => {
-    onChange({
-      ...datasetConfigs,
-      retrieval_model: value,
-    }, true)
-  }
+
+  useEffect(() => {
+    if (type === RETRIEVE_TYPE.oneWay) {
+      onChange({
+        ...datasetConfigs,
+        retrieval_model: RETRIEVE_TYPE.multiWay,
+      }, isInWorkflow)
+    }
+  }, [type])
+
   const {
     modelList: rerankModelList,
     defaultModel: rerankDefaultModel,
@@ -112,12 +100,11 @@ const ConfigContent: FC<Props> = ({
     })
   }
 
-  const handleWeightedScoreChange = (value: { type: WeightedScoreEnum; value: number[] }) => {
+  const handleWeightedScoreChange = (value: { value: number[] }) => {
     const configs = {
       ...datasetConfigs,
       weights: {
         ...datasetConfigs.weights!,
-        weight_type: value.type,
         vector_setting: {
           ...datasetConfigs.weights!.vector_setting!,
           vector_weight: value.value[0],
@@ -168,55 +155,21 @@ const ConfigContent: FC<Props> = ({
   return (
     <div>
       <div className='system-xl-semibold text-text-primary'>{t('dataset.retrievalSettings')}</div>
-      <div className='mt-2 space-y-3'>
-        <RadioCard
-          icon={<NTo1Retrieval className='shrink-0 mr-3 w-9 h-9 rounded-lg' />}
-          title={(
-            <div className='flex items-center'>
-              {t('appDebug.datasetConfig.retrieveOneWay.title')}
-              <TooltipPlus
-                popupContent={(
-                  <div className='w-[320px]'>
-                    {t('dataset.nTo1RetrievalLegacy')}
-                    <a
-                      className='underline'
-                      href={LEGACY_LINK_MAP[language]}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      ({t('dataset.nTo1RetrievalLegacyLink')})
-                    </a>
-                  </div>
-                )}
-              >
-                <div className='ml-1 flex items-center px-[5px] h-[18px] rounded-[5px] border border-text-accent-secondary system-2xs-medium-uppercase text-text-accent-secondary'>legacy</div>
-              </TooltipPlus>
-            </div>
-          )}
-          description={t('appDebug.datasetConfig.retrieveOneWay.description')}
-          isChosen={type === RETRIEVE_TYPE.oneWay}
-          onChosen={() => { setType(RETRIEVE_TYPE.oneWay) }}
-        />
-        <RadioCard
-          icon={<MultiPathRetrieval className='shrink-0 mr-3 w-9 h-9 rounded-lg' />}
-          title={t('appDebug.datasetConfig.retrieveMultiWay.title')}
-          description={t('appDebug.datasetConfig.retrieveMultiWay.description')}
-          isChosen={type === RETRIEVE_TYPE.multiWay}
-          onChosen={() => { setType(RETRIEVE_TYPE.multiWay) }}
-        />
+      <div className='system-xs-regular text-text-tertiary'>
+        {t('dataset.defaultRetrievalTip')}
       </div>
       {type === RETRIEVE_TYPE.multiWay && (
         <>
-          <div className='mb-2 mt-4 h-[1px] bg-divider-subtle'></div>
-          <div
-            className='flex items-center mb-2 h-6 system-md-semibold text-text-secondary'
-          >
-            {t('dataset.rerankSettings')}
+          <div className='flex items-center my-2 py-1 h-6'>
+            <div className='shrink-0 mr-2 system-xs-semibold-uppercase text-text-secondary'>
+              {t('dataset.rerankSettings')}
+            </div>
+            <div className='grow h-[1px] bg-gradient-to-l from-white to-[rgba(16,24,40,0.08)]'></div>
           </div>
           {
             selectedDatasetsMode.inconsistentEmbeddingModel
             && (
-              <div className='mt-4 system-xs-regular text-text-warning'>
+              <div className='mt-4 system-xs-medium text-text-warning'>
                 {t('dataset.inconsistentEmbeddingModelTip')}
               </div>
             )
@@ -224,7 +177,7 @@ const ConfigContent: FC<Props> = ({
           {
             selectedDatasetsMode.mixtureHighQualityAndEconomic
             && (
-              <div className='mt-4 system-xs-regular text-text-warning'>
+              <div className='mt-4 system-xs-medium text-text-warning'>
                 {t('dataset.mixtureHighQualityAndEconomicTip')}
               </div>
             )
@@ -243,12 +196,15 @@ const ConfigContent: FC<Props> = ({
                       onClick={() => handleRerankModeChange(option.value)}
                     >
                       <div className='truncate'>{option.label}</div>
-                      <TooltipPlus
-                        popupContent={<div className='w-[200px]'>{option.tips}</div>}
-                        hideArrow
-                      >
-                        <RiQuestionLine className='ml-0.5 w-3.5 h-4.5 text-text-quaternary' />
-                      </TooltipPlus>
+                      <Tooltip
+                        popupContent={
+                          <div className='w-[200px]'>
+                            {option.tips}
+                          </div>
+                        }
+                        popupClassName='ml-0.5'
+                        triggerClassName='ml-0.5 w-3.5 h-3.5'
+                      />
                     </div>
                   ))
                 }
@@ -274,9 +230,15 @@ const ConfigContent: FC<Props> = ({
                     )
                   }
                   <div className='ml-2 leading-[32px] text-[13px] font-medium text-gray-900'>{t('common.modelProvider.rerankModel.key')}</div>
-                  <TooltipPlus popupContent={<div className="w-[200px]">{t('common.modelProvider.rerankModel.tip')}</div>}>
-                    <RiQuestionLine className='ml-0.5 w-[14px] h-[14px] text-gray-400' />
-                  </TooltipPlus>
+                  <Tooltip
+                    popupContent={
+                      <div className="w-[200px]">
+                        {t('common.modelProvider.rerankModel.tip')}
+                      </div>
+                    }
+                    popupClassName='ml-0.5'
+                    triggerClassName='ml-0.5 w-3.5 h-3.5'
+                  />
                 </div>
                 <div>
                   <ModelSelector
@@ -302,7 +264,6 @@ const ConfigContent: FC<Props> = ({
               <div className='mt-2 space-y-4'>
                 <WeightedScore
                   value={{
-                    type: datasetConfigs.weights!.weight_type,
                     value: [
                       datasetConfigs.weights!.vector_setting.vector_weight,
                       datasetConfigs.weights!.keyword_setting.keyword_weight,
@@ -355,11 +316,9 @@ const ConfigContent: FC<Props> = ({
         <div className='mt-4'>
           <div className='flex items-center space-x-0.5'>
             <div className='leading-[32px] text-[13px] font-medium text-gray-900'>{t('common.modelProvider.systemReasoningModel.key')}</div>
-            <TooltipPlus
+            <Tooltip
               popupContent={t('common.modelProvider.systemReasoningModel.tip')}
-            >
-              <RiQuestionLine className='w-3.5 h-4.5 text-gray-400' />
-            </TooltipPlus>
+            />
           </div>
           <ModelParameterModal
             isInWorkflow={isInWorkflow}
