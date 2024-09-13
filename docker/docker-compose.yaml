@@ -288,7 +288,7 @@ services:
 
   # The DifySandbox
   sandbox:
-    image: langgenius/dify-sandbox:0.2.6
+    image: langgenius/dify-sandbox:0.2.7
     restart: always
     environment:
       # The DifySandbox configurations
@@ -325,9 +325,7 @@ services:
     entrypoint: [ "/docker-entrypoint.sh" ]
     command: [ "tail", "-f", "/dev/null" ]
 
-  # The nginx reverse proxy.
-
-
+  
   # The Weaviate vector store.
   weaviate:
     image: semitechnologies/weaviate:1.19.0
