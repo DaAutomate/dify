@@ -288,7 +288,7 @@ services:
 
   # The DifySandbox
   sandbox:
-    image: langgenius/dify-sandbox:17bb213f2df4d34849e01ead55e6225be9e634a8
+    image: langgenius/dify-sandbox:0.2.4
     restart: always
     environment:
       # The DifySandbox configurations
