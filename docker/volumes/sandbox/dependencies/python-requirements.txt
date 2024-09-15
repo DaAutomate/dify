@@ -1,6 +1,0 @@
-requests
-chardet
-charset_normalizer
-torch
-tensorflow>=2.0
-flax
